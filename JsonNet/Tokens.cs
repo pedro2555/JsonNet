@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace JsonNet
 {
-    public class Class1
+    internal static class Tokens
     {
+
     }
 }
