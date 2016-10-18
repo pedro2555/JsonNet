@@ -8,14 +8,24 @@ using System.Threading.Tasks;
 
 namespace JsonNet
 {
-    public static class Parsers
+    public static class Parser
     {
         /// <summary>
-        /// 
+        /// Reads any valid JSON value, otherwise an InvalidCastException is
+        /// thrown.
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="position"></param>
-        /// <returns></returns>
+        /// <param name="bytes">An UTF-8 Enconded byte array</param>
+        /// <param name="position">The position in the array where the value
+        /// starts.</param>
+        /// <returns>
+        ///     The return value can be one of:
+        ///         * null
+        ///         * bool
+        ///         * string
+        ///         * int
+        ///         * float
+        ///         * Hashtable (JSON objects and arrays)
+        /// </returns>
         public static object ReadValue(byte[] bytes, ref int position)
         {
             // identifiy value type to send to proper reader
@@ -75,7 +85,7 @@ namespace JsonNet
         }
 
         /// <summary>
-        /// Returns the next character in the given position
+        /// Reads the next character in the given position
         /// </summary>
         /// <param name="bytes">The byte[] from where to read</param>
         /// <param name="position">The position in the byte[] to read</param>
@@ -105,6 +115,8 @@ namespace JsonNet
                 position++;
             }
         }
+
+        #region JSON value readers
 
         /// <summary>
         /// Reads a string value
@@ -157,7 +169,6 @@ namespace JsonNet
                             return result_f;
                         else
                             throw new IndexOutOfRangeException();
-                        break;
                     default:
                         result.Append(byte_c);
                         break;
@@ -167,7 +178,12 @@ namespace JsonNet
             throw new InvalidCastException();
         }
 
-
+        /// <summary>
+        /// Reads a JSON object, delimited by { }
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private static Hashtable ReadObject(byte[] bytes, ref int position)
         {
             char byte_c;
@@ -201,7 +217,12 @@ namespace JsonNet
             throw new InvalidCastException();
         }
         
-
+        /// <summary>
+        /// Reads a JSON array, delimited by [ ]
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private static Hashtable ReadArray(byte[] bytes, ref int position)
         {
             char byte_c;
@@ -226,7 +247,12 @@ namespace JsonNet
             return result;
         }
 
-
+        /// <summary>
+        /// Reads a bool value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private static bool ReadBoolean(byte[] bytes, ref int position)
         {
             char byte_c = (char)ReadNext(bytes, ref position);
@@ -257,7 +283,12 @@ namespace JsonNet
             throw new InvalidCastException();
         }
 
-
+        /// <summary>
+        /// Reads a null value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private static object ReadNull(byte[] bytes, ref int position)
         {
             char byte_c = (char)ReadNext(bytes, ref position);
@@ -280,19 +311,9 @@ namespace JsonNet
             throw new InvalidCastException();
         }
 
+        #endregion JSON value readers
 
-
-
-
-
-
-
-
-
-
-
-
-        public enum Whitespace
+        private enum Whitespace
         {
             TABULATION = '\t',      // (int)0x09,
             LINE_FEED = '\n',       // (int)0x0A,

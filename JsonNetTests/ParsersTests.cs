@@ -39,7 +39,7 @@ namespace JsonNetTests
                 ((Hashtable)result)[4]);
             Assert.AreEqual(
                 "value",
-                ((Hashtable)result)[5]["string"]);
+                ((Hashtable)((Hashtable)result)[5])["string"]);
         }
     }
 }

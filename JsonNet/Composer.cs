@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace JsonNet
 {
-    internal static class Tokens
+    /// <summary>
+    /// TODO
+    /// </summary>
+    public static class Composer
     {
-
     }
 }
