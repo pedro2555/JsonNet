@@ -18,7 +18,7 @@ namespace JsonNetTests
             sb.AppendLine("[ \"strings\", -12.35654,345 ,\r\n \t-234,12.3,{\"string\":\"value\",\"number\":-12.35654},[],true,false,null,]");
 
             int position = 0;
-            object result = Parsers.ReadValue(
+            object result = Parser.ReadValue(
                 new UTF8Encoding().GetBytes(sb.ToString()),
                 ref position);
 
