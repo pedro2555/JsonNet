@@ -95,7 +95,8 @@ namespace JsonNet
         private static byte ReadNext(
             byte[] bytes,
             ref int position,
-            bool returnWhitespace = false)
+            bool returnWhitespace = false,
+            bool acceptEscaped = false)
         {
             while (true)
             {
@@ -103,16 +104,18 @@ namespace JsonNet
                 if (position >= bytes.Length)
                     throw new IndexOutOfRangeException();
 
-                // may or not return whitespace
-                if (!Enum.IsDefined(
-                    typeof(Whitespace),
-                    (int)bytes[position]))
-                    return bytes[position++];
-                else if (returnWhitespace)
-                    return bytes[position++];
+                byte c = bytes[position];
 
-                // advance if whitespace
+                // handle whitespace
+                if (Enum.IsDefined(typeof(Whitespace), (int)c))
+                    if (!returnWhitespace)
+                    {
+                        position++;
+                        continue;
+                    }
+
                 position++;
+                return c;
             }
         }
 
@@ -127,13 +130,33 @@ namespace JsonNet
         private static string ReadString(byte[] bytes, ref int position)
         {
             char byte_c;
+            bool escape = false;
             StringBuilder result = new StringBuilder();
 
             // read till "
-            while ((byte_c = (char)ReadNext(bytes, ref position, true)) != '"')
-                result.Append(byte_c);
+            while (true)
+            {
+                byte_c = (char)ReadNext(bytes, ref position, true);
 
-            return result.ToString();
+                if (escape)
+                {
+                    result.Append(byte_c);
+                    escape = false;
+                    continue;
+                }
+
+                if (byte_c == '\\')
+                {
+                    escape = true;
+                    result.Append(byte_c);
+                    continue;
+                }
+
+                if (byte_c == '"')
+                    return result.ToString();
+
+                result.Append(byte_c);
+            }
         }
 
         /// <summary>

@@ -41,5 +41,103 @@ namespace JsonNetTests
                 "value",
                 ((Hashtable)((Hashtable)result)[5])["string"]);
         }
+
+        [TestMethod]
+        public void SingleStringTest()
+        {
+            string json_string = "\"\"";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleIntTest()
+        {
+            string json_string = "0";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleFloatTest()
+        {
+            string json_string = "0.1";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleObjectTest()
+        {
+            string json_string = "{}";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleArrayTest()
+        {
+            string json_string = "[]";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleBooleanTest()
+        {
+            string json_string = "true";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+
+
+            json_string = "false";
+            position = 0;
+
+            result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void SingleNullTest()
+        {
+            string json_string = "null";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+        }
+
+        [TestMethod]
+        public void EscapedStringCharactersTest()
+        {
+            string json_string = "{\"name\":\" \\\" \"}";
+            int position = 0;
+
+            object result = Parser.ReadValue(
+                new UTF8Encoding().GetBytes(json_string),
+                ref position);
+
+            Assert.AreEqual(" \\\" ", ((Hashtable)result)["name"]);
+        }
     }
 }
