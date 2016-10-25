@@ -1,8 +1,6 @@
-﻿using System;
+﻿using JsonSerializer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using JsonSerializer;
 using System.IO;
-using System.Diagnostics;
 
 namespace JsonSerializerTests
 {
