@@ -39,6 +39,26 @@ namespace JsonNetTests
         }
 
         [TestMethod]
+        public void ComposeSingleIntTest()
+        {
+            int test = 174;
+
+            string result = Composer.ComposeValue(test);
+
+            Assert.AreEqual(174, Convert.ToInt32(result));
+        }
+
+        [TestMethod]
+        public void ComposeSingleFloatTest()
+        {
+            float test = 1.74f;
+
+            string result = Composer.ComposeValue(test);
+
+            Assert.AreEqual(1.74f, Convert.ToSingle(result));
+        }
+
+        [TestMethod]
         public void ComposeSingleNullTest()
         {
             string result = Composer.ComposeValue(null);
