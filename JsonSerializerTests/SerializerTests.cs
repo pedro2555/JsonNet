@@ -32,13 +32,15 @@ namespace JsonSerializerTests
             using (var stream = new MemoryStream(new byte[16*1024], true))
             {
                 MyClass Person = new MyClass("Pedro", 26);
-                JsonComposer.ComposeValue(stream, Person);
+                JsonComposer.Serialize(stream, Person);
 
                 stream.Position = 0;
                 var sr = new StreamReader(stream);
                 result = sr.ReadToEnd();
             }
-            Debug.Print(result);
+            Assert.AreEqual(
+                "{\"Property1\":\"Pedro\",\"Property2\":26}",
+                result);
 
             //// Deserialzie it from the file
             //MyObject readFromFile = null;

@@ -99,7 +99,7 @@ namespace JsonSerializer
             WriteToStream(target, ']');
         }
 
-        public static void ComposeValue(Stream target, object obj)
+        private static void ComposeValue(Stream target, object obj)
         {
             if (obj is string)
             {
@@ -149,6 +149,20 @@ namespace JsonSerializer
                 16*1024,
                 true))
                 writer.Write(obj);
+        }
+
+        public static void Serialize(Stream target, object obj)
+        {
+            ComposeValue(target, obj);
+
+            // clean stream lenght
+            long targetLenght = 0;
+            target.Position = 0;
+
+            while (target.ReadByte() != (int)'\0')
+                targetLenght++;
+
+            target.SetLength(targetLenght);
         }
     }
 }
