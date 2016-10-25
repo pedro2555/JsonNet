@@ -29,11 +29,14 @@ namespace JsonSerializerTests
             string result;
 
             // Serialize an object
-            using (var stream = new MemoryStream())
+            using (var stream = new MemoryStream(new byte[16*1024], true))
             {
                 MyClass Person = new MyClass("Pedro", 26);
-                Serializer.Serialize(Person, stream);
-                result = stream.ToString();
+                JsonComposer.ComposeValue(stream, Person);
+
+                stream.Position = 0;
+                var sr = new StreamReader(stream);
+                result = sr.ReadToEnd();
             }
             Debug.Print(result);
 

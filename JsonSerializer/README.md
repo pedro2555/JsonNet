@@ -1,7 +1,7 @@
 ﻿# Example Usage
 
 For a  class, class property, struct, or any other data structure, to be visible
-to the JsonSerializer, it must have the [JsonSerializable] attribute.
+to the JsonSerializer, it must have the `[JsonSerializable]` attribute.
 
 ```
 using JsonSerializer;
@@ -23,7 +23,7 @@ public class MyClass
 
 The attribute above is marking the whole class (all of it's public parameters)
 as visible to the JsonSerializer. But you can also specify only specific
-parameters, to do that just alter your class to set the [JsonSerializable]
+parameters, to do that just alter your class to set the `[JsonSerializable]`
 attribute to every parameter you want to be serializable. The example class
 below only exposes Property1 to the JsonSerializer
 
