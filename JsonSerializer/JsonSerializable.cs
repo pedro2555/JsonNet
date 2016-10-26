@@ -9,10 +9,17 @@ namespace JsonSerializer
     /// AllowMultiple = false   : Allow any number of members to have the
     ///                             attribute on a single class
     /// </summary>
-    [AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
+    [AttributeUsage(
+        AttributeTargets.Class | AttributeTargets.Property,
+        Inherited = true,
+        AllowMultiple = true)]
     public class JsonSerializable : Attribute
     {
-        public JsonSerializable()
-        { }
+        public int Order { get; set; }
+
+        public JsonSerializable(int order = -1)
+        {
+            this.Order = order;
+        }
     }
 }

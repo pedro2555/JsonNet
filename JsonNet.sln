@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonNet", "JsonNet\JsonNet.csproj", "{A214014E-370F-41FB-9541-41C4CA3259F1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonNetTests", "JsonNetTests\JsonNetTests.csproj", "{7953E8B0-BCD8-4F2B-8AEF-268F13947265}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonSerializer", "JsonSerializer\JsonSerializer.csproj", "{CBEEB669-9CA3-4B28-A0B0-60D8A367C299}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonSerializerTests", "JsonSerializerTests\JsonSerializerTests.csproj", "{6B37FFE5-BC0B-4B6B-81A6-CD97CA1745EB}"
@@ -17,14 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A214014E-370F-41FB-9541-41C4CA3259F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A214014E-370F-41FB-9541-41C4CA3259F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A214014E-370F-41FB-9541-41C4CA3259F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A214014E-370F-41FB-9541-41C4CA3259F1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7953E8B0-BCD8-4F2B-8AEF-268F13947265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7953E8B0-BCD8-4F2B-8AEF-268F13947265}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7953E8B0-BCD8-4F2B-8AEF-268F13947265}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7953E8B0-BCD8-4F2B-8AEF-268F13947265}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CBEEB669-9CA3-4B28-A0B0-60D8A367C299}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CBEEB669-9CA3-4B28-A0B0-60D8A367C299}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBEEB669-9CA3-4B28-A0B0-60D8A367C299}.Release|Any CPU.ActiveCfg = Release|Any CPU

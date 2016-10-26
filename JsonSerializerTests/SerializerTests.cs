@@ -1,18 +1,21 @@
 ﻿using JsonSerializer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
-using System.Text;
 
 namespace JsonSerializerTests
 {
     [TestClass]
     public class SerializerTests
     {
-        [JsonSerializable]
         public class DriverLicense
         {
+            [JsonSerializable(1)]
             public string Category { get; set; }
+            
+            [JsonSerializable(2)]
             public int ValidUntilYear { get; set; }
+
+            #region constructors and overrides
 
             public DriverLicense() { }
 
@@ -34,15 +37,22 @@ namespace JsonSerializerTests
                 return (o.Category == Category)
                     && (o.ValidUntilYear == ValidUntilYear);
             }
+
+            #endregion constructors and overrides
         }
-        [JsonSerializable]
+
         public class Person
         {
+            [JsonSerializable(2)]
             public string Name { get; set; }
 
+            [JsonSerializable(1)]
             public int Age { get; set; }
 
+            [JsonSerializable(3)]
             public DriverLicense License { get; set; }
+
+            #region constructors and overrides
 
             public Person()
             {
@@ -70,6 +80,8 @@ namespace JsonSerializerTests
                     && (o.Age == Age)
                     && (o.License.Equals(License));
             }
+
+            #endregion constructors and overrides
         }
 
         [TestMethod]
@@ -87,7 +99,7 @@ namespace JsonSerializerTests
                 actual = sr.ReadToEnd();
             }
             Assert.AreEqual(
-                "{\"Name\":\"Pedro\",\"Age\":26,\"License\":{\"Category\":\"B\",\"ValidUntilYear\":2040}}",
+                "{\"Age\":26,\"Name\":\"Pedro\",\"License\":{\"Category\":\"B\",\"ValidUntilYear\":2040}}",
                 actual);
         }
 

@@ -56,12 +56,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ComposerTests.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\JsonNet\JsonNet.csproj">
-      <Project>{a214014e-370f-41fb-9541-41c4ca3259f1}</Project>
-      <Name>JsonNet</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>

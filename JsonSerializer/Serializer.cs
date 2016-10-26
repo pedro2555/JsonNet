@@ -32,11 +32,18 @@ namespace JsonSerializer
             // Return only JsonSerializable properties
             else
                 return type
-                    .GetProperties()
-                    .Where(
-                        prop => prop.GetCustomAttributes(
-                            attributeType,
-                            true).Any());
+                    .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                    .Select(x => new
+                    {
+                        Property = x,
+                        Attribute = 
+                            (JsonSerializable)Attribute.GetCustomAttribute(
+                                x,
+                                typeof(JsonSerializable),
+                                true)
+                    })
+                    .OrderBy(x => x.Attribute != null ? x.Attribute.Order : -1)
+                    .Select(x => x.Property);
         }
 
         #region Composing methods
