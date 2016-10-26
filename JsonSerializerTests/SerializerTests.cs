@@ -4,6 +4,8 @@ using System.IO;
 
 namespace JsonSerializerTests
 {
+
+
     [TestClass]
     public class SerializerTests
     {

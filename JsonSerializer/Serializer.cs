@@ -23,27 +23,18 @@ namespace JsonSerializer
         /// <returns></returns>
         private static IEnumerable<PropertyInfo> GetProperties(Type type)
         {
-            // Get the attribute type
-            var attributeType = typeof(JsonSerializable);
-
-            // Return all properties if JsonSerializable is set on the class
-            if (Attribute.GetCustomAttribute(type, attributeType) != null)
-                return type.GetProperties();
-            // Return only JsonSerializable properties
-            else
-                return type
-                    .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                    .Select(x => new
-                    {
-                        Property = x,
-                        Attribute = 
-                            (JsonSerializable)Attribute.GetCustomAttribute(
-                                x,
-                                typeof(JsonSerializable),
-                                true)
-                    })
-                    .OrderBy(x => x.Attribute != null ? x.Attribute.Order : -1)
-                    .Select(x => x.Property);
+            return type
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Select(x => new
+                {
+                    Property = x,
+                    Attribute =
+                        (JsonSerializable)Attribute.GetCustomAttribute(
+                            x,
+                            typeof(JsonSerializable),
+                            true)
+                })
+                .Select(x => x.Property);
         }
 
         #region Composing methods
@@ -143,11 +134,17 @@ namespace JsonSerializer
         {
             bool firstEntryFlag = true;
 
-            WriteToStream(target, (firstEntryFlag) ? '[' : ',');
-            firstEntryFlag = false;
+            WriteToStream(target, '[');
 
             foreach (object o_obj in (object[])obj)
+            {
+                if (!firstEntryFlag)
+                    WriteToStream(target, ',');
+
                 ComposeValue(target, o_obj);
+
+                firstEntryFlag = false;
+            }
 
             WriteToStream(target, ']');
         }

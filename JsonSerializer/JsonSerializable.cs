@@ -10,16 +10,11 @@ namespace JsonSerializer
     ///                             attribute on a single class
     /// </summary>
     [AttributeUsage(
-        AttributeTargets.Class | AttributeTargets.Property,
+        AttributeTargets.Property | AttributeTargets.Field,
         Inherited = true,
         AllowMultiple = true)]
     public class JsonSerializable : Attribute
     {
-        public int Order { get; set; }
-
-        public JsonSerializable(int order = -1)
-        {
-            this.Order = order;
-        }
+        public JsonSerializable() { }
     }
 }
