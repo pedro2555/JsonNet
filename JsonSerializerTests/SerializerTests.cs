@@ -21,72 +21,90 @@ namespace JsonSerializerTests
                 this.Category = category;
                 this.ValidUntilYear = validUntilYear;
             }
+
+            public override bool Equals(System.Object obj)
+            {
+                if (obj == null)
+                    return false;
+
+                DriverLicense o = obj as DriverLicense;
+                if ((DriverLicense)o == null)
+                    return false;
+
+                return (o.Category == Category)
+                    && (o.ValidUntilYear == ValidUntilYear);
+            }
         }
         [JsonSerializable]
-        public class MyClass
+        public class Person
         {
-            public string Property1 { get; set; }
+            public string Name { get; set; }
 
-            public int Property2 { get; set; }
+            public int Age { get; set; }
 
             public DriverLicense License { get; set; }
 
-            public MyClass()
+            public Person()
             {
 
             }
 
-            public MyClass(string property1, int property2)
+            public Person(string name, int age)
             {
-                this.Property1 = property1;
-                this.Property2 = property2;
+                this.Name = name;
+                this.Age = age;
 
                 this.License = new DriverLicense("B", 2040);
+            }
+
+            public override bool Equals(System.Object obj)
+            {
+                if (obj == null)
+                    return false;
+
+                Person o = obj as Person;
+                if ((Person)o == null)
+                    return false;
+
+                return (o.Name == Name)
+                    && (o.Age == Age)
+                    && (o.License.Equals(License));
             }
         }
 
         [TestMethod]
         public void SerializeTest()
         {
-            string result;
+            string actual;
 
-            // Serialize an object
             using (var stream = new MemoryStream(new byte[16*1024], true))
             {
-                MyClass Person = new MyClass("Pedro", 26);
-                Serializer.Serialize(stream, Person);
+                Person p = new Person("Pedro", 26);
+                Serializer.Serialize(stream, p);
 
                 stream.Position = 0;
                 var sr = new StreamReader(stream);
-                result = sr.ReadToEnd();
+                actual = sr.ReadToEnd();
             }
             Assert.AreEqual(
-                "{\"Property1\":\"Pedro\",\"Property2\":26}",
-                result);
-
-            //// Deserialzie it from the file
-            //MyObject readFromFile = null;
-            //using (var stream = File.OpenRead("C:\\temp.dat"))
-            //{
-            //    readFromFile = Serializer.Deserialize<MyObject>(stream);
-            //}
+                "{\"Name\":\"Pedro\",\"Age\":26,\"License\":{\"Category\":\"B\",\"ValidUntilYear\":2040}}",
+                actual);
         }
 
         [TestMethod]
         public void DeserializeTest()
         {
             MemoryStream stream;
-            MyClass expected, actual;
+            Person expected, actual;
 
-            // Serialize an object
             using (stream = new MemoryStream(new byte[16 * 1024], true))
             {
-                expected = new MyClass("Pedro", 26);
+                expected = new Person("Pedro", 26);
                 Serializer.Serialize(stream, expected);
 
                 stream.Seek(0, SeekOrigin.Begin);
 
-                actual = Serializer.Deserialize<MyClass>(stream);
+                actual = Serializer.Deserialize<Person>(stream);
 
                 Assert.AreEqual(expected, actual);
             }
