@@ -47,5 +47,20 @@ namespace JsonSerializerTests
             //    readFromFile = Serializer.Deserialize<MyObject>(stream);
             //}
         }
+
+        [TestMethod]
+        public void DeserializeTest()
+        {
+            // Serialize an object
+            using (var stream = new MemoryStream(new byte[16 * 1024], true))
+            {
+                MyClass Person = new MyClass("Pedro", 26);
+                Serializer.Serialize(stream, Person);
+
+                stream.Seek(0, SeekOrigin.Begin);
+
+                var obj = Serializer.ReadValue(stream);
+            }
+        }
     }
 }
