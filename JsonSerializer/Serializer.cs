@@ -265,28 +265,53 @@ namespace JsonSerializer
 
         #region Parsing methods
 
-        public static object ReadValue(Stream serializationStream)
+        /// <summary>
+        /// Reads any valid JSON value, otherwise an InvalidCastException is
+        /// thrown.
+        /// </summary>
+        /// <param name="bytes">An UTF-8 Enconded byte array</param>
+        /// <param name="position">The position in the array where the value
+        /// starts.</param>
+        /// <returns>
+        ///     The return value can be one of:
+        ///         * null
+        ///         * bool
+        ///         * string
+        ///         * int
+        ///         * float
+        ///         * Hashtable (JSON objects and arrays)
+        /// </returns>
+        public static object ReadValue(byte[] bytes, ref int position)
         {
             // identifiy value type to send to proper reader
 
-            int c = PeekNext(serializationStream);
+            char byte_c = (char)ReadNext(bytes, ref position);
 
             // null
-            if ((char)c == 'n')
-                return ReadNull(serializationStream);
+            if (byte_c.ToString().ToLower() == "n")
+            {
+                position--;
+                return ReadNull(bytes, ref position);
+            }
 
             // boolean
-            if ((char)c == 't')
-                return ReadBoolean(serializationStream);
-            if ((char)c == 'f')
-                return ReadBoolean(serializationStream);
+            if (byte_c.ToString().ToLower() == "t")
+            {
+                position--;
+                return ReadBoolean(bytes, ref position);
+            }
+            if (byte_c.ToString().ToLower() == "f")
+            {
+                position--;
+                return ReadBoolean(bytes, ref position);
+            }
 
             // strings
-            if ((char)c == '"')
-                return ReadString(serializationStream);
+            if (byte_c == '"')
+                return ReadString(bytes, ref position);
 
             // numbers
-            switch ((char)c)
+            switch (byte_c)
             {
                 case '-':
                 case '0':
@@ -299,113 +324,116 @@ namespace JsonSerializer
                 case '7':
                 case '8':
                 case '9':
-                    return ReadNumber(serializationStream);
+                    position--;
+                    return ReadNumber(bytes, ref position);
             }
 
             // object
-            if (c == (int)Tokens.BEGIN_OBJECT)
-                return ReadObject(serializationStream);
+            if (byte_c == '{')
+                return ReadObject(bytes, ref position);
 
             // array
-            if (c == (int)Tokens.BEGIN_ARRAY)
-                return ReadArray(serializationStream);
+            if (byte_c == '[')
+                return ReadArray(bytes, ref position);
 
             throw new InvalidCastException();
         }
 
-        private static int ReadNext(
-            Stream target,
-            bool returnWhitespace = false)
-        {
-            return GetNext(target, returnWhitespace, true);
-        }
-
-        private static int PeekNext(
-            Stream target,
-            bool returnWhitespace = false)
-        {
-            return GetNext(target, returnWhitespace, false);
-        }
-
-        private static int GetNext(
-            Stream target,
+        /// <summary>
+        /// Reads the next character in the given position
+        /// </summary>
+        /// <param name="bytes">The byte[] from where to read</param>
+        /// <param name="position">The position in the byte[] to read</param>
+        /// <param name="ignoreWhitespace">Whitespace is jumped and not 
+        /// returned</param>
+        /// <returns></returns>
+        private static byte ReadNext(
+            byte[] bytes,
+            ref int position,
             bool returnWhitespace = false,
-            bool consume = true)
+            bool acceptEscaped = false)
         {
-            int c = -1;
-
-            using (var reader = new StreamReader(
-                target,
-                Encoding.UTF8,
-                false,
-                Convert.ToInt32(target.Length),
-                true))
+            while (true)
             {
-                while (target.CanRead)
-                {
-                    if (consume)
-                        c = reader.Read();
-                    else
-                        c = reader.Peek();
+                // fail if index out of bounds
+                if (position >= bytes.Length)
+                    throw new IndexOutOfRangeException();
 
-                    if (Enum.IsDefined(typeof(Whitespace), (int)c))
+                byte c = bytes[position];
+
+                // handle whitespace
+                if (Enum.IsDefined(typeof(Whitespace), (int)c))
+                    if (!returnWhitespace)
                     {
-                        if (returnWhitespace)
-                            break;
-                        else
-                            reader.Read();
+                        position++;
+                        continue;
                     }
-                    else
-                        break;
-                }
+
+                position++;
+                return c;
             }
-
-            if (c == -1)
-                throw new IndexOutOfRangeException();
-
-            return c;
         }
 
         #region JSON value readers
 
-        private static string ReadString(Stream target)
+        /// <summary>
+        /// Reads a string value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static string ReadString(byte[] bytes, ref int position)
         {
-            string s = "";
+            char byte_c;
             bool escape = false;
+            StringBuilder result = new StringBuilder();
 
-            if (ReadNext(target, true) != (int)Tokens.QUOTATION_MARK)
-                throw new InvalidCastException();
-
-            do
+            // read till "
+            while (true)
             {
-                // return at unescaped quotation mark
-                if (PeekNext(target, true) == (int)Tokens.QUOTATION_MARK
-                    && !escape)
-                    break;
+                byte_c = (char)ReadNext(bytes, ref position, true);
 
-                // set escape character to avoid early return
-                escape = (PeekNext(target, true) == (int)Tokens.ESCAPE
-                    && !escape) ? true : false;
+                if (escape)
+                {
+                    result.Append(byte_c);
+                    escape = false;
+                    continue;
+                }
 
-                // add character to result
-                s += (char)ReadNext(target, true);
-            } while (true);
-            return s;
+                if (byte_c == '\\')
+                {
+                    escape = true;
+                    result.Append(byte_c);
+                    continue;
+                }
+
+                if (byte_c == '"')
+                    return result.ToString();
+
+                result.Append(byte_c);
+            }
         }
 
-        private static object ReadNumber(Stream target)
+        /// <summary>
+        /// Reads a float or integer value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static object ReadNumber(byte[] bytes, ref int position)
         {
-            string s = "";
-            int c;
-
-            do
-            {
-                switch (PeekNext(target))
+            // out of a number we should find } ] , 
+            char byte_c;
+            StringBuilder result = new StringBuilder();
+            while (true)
+                switch ((byte_c = (char)ReadNext(bytes, ref position)))
                 {
-                    case (int)Tokens.END_OBJECT:
-                    case (int)Tokens.END_ARRAY:
-                    case (int)Tokens.VALUE_SEPARATOR:
-                        string result_raw = s.ToString().Trim();
+                    case '}':
+                    case ']':
+                    case ',':
+                        // get our position indicator back
+                        position--;
+                        string result_raw = result.ToString().Trim();
                         // try to return float
                         float result_f;
                         int result_i;
@@ -420,81 +448,102 @@ namespace JsonSerializer
                         else
                             throw new IndexOutOfRangeException();
                     default:
-                        s += (char)ReadNext(target);
+                        result.Append(byte_c);
                         break;
                 }
-            } while (true);
 
             // we should not have reached this far
             throw new InvalidCastException();
         }
 
-        private static Hashtable ReadObject(Stream target)
+        /// <summary>
+        /// Reads a JSON object, delimited by { }
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static Hashtable ReadObject(byte[] bytes, ref int position)
         {
+            char byte_c;
             Hashtable result = new Hashtable();
             object key, value;
 
-            if (ReadNext(target) != (int)Tokens.BEGIN_OBJECT)
-                throw new InvalidCastException();
-
             do
             {
-                if (PeekNext(target) == (int)Tokens.END_OBJECT)
+                byte_c = (char)ReadNext(bytes, ref position);
+
+                if (byte_c == '}')
                     return result;
 
-                if (PeekNext(target) != (int)Tokens.QUOTATION_MARK)
+                if (byte_c != '"')
                     throw new InvalidCastException();
 
-                key = ReadString(target);
+                key = ReadString(bytes, ref position);
 
-                if (PeekNext(target) != (int)Tokens.NAME_SEPARATOR)
+                if ((byte_c = (char)ReadNext(bytes, ref position)) != ':')
                     throw new InvalidCastException();
 
-                value = ReadValue(target);
+                value = ReadValue(bytes, ref position);
 
                 result.Add(key, value);
 
-            } while (PeekNext(target) == (int)Tokens.VALUE_SEPARATOR);
+            } while ((byte_c = (char)ReadNext(bytes, ref position)) == ',');
 
-            if (PeekNext(target) == (int)Tokens.END_OBJECT)
+            if (byte_c == '}')
                 return result;
 
             throw new InvalidCastException();
         }
 
-        private static object[] ReadArray(Stream target)
+        /// <summary>
+        /// Reads a JSON array, delimited by [ ]
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static Hashtable ReadArray(byte[] bytes, ref int position)
         {
-            List<object> result = new List<object>();
+            char byte_c;
+            Hashtable result = new Hashtable();
 
             do
             {
-                if (PeekNext(target) == (int)Tokens.END_ARRAY)
-                    return result.ToArray<object>();
+                byte_c = (char)ReadNext(bytes, ref position);
 
-                result.Add(ReadValue(target));
+                if (byte_c == ']')
+                    return result;
+                else
+                    position--;
 
-            } while (PeekNext(target) == (int)Tokens.VALUE_SEPARATOR);
+                result.Add(result.Count, ReadValue(bytes, ref position));
 
-            if (PeekNext(target) == (int)Tokens.END_ARRAY)
-                return result.ToArray<object>();
+            } while ((byte_c = (char)ReadNext(bytes, ref position)) == ',');
 
-            throw new InvalidCastException();
+            if (byte_c != ']')
+                throw new InvalidCastException();
+
+            return result;
         }
 
-        private static bool ReadBoolean(Stream target)
+        /// <summary>
+        /// Reads a bool value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static bool ReadBoolean(byte[] bytes, ref int position)
         {
-            int c = ReadNext(target);
+            char byte_c = (char)ReadNext(bytes, ref position);
             bool result;
             string result_value;
-            string s = "";
-
-            switch ((char)c)
+            StringBuilder result_test = new StringBuilder();
+            switch (byte_c.ToString().ToLower())
             {
-                case 't':
+                case "t":
                     result = true;
                     result_value = "true";
                     break;
-                case 'f':
+                case "f":
                     result = false;
                     result_value = "false";
                     break;
@@ -502,36 +551,41 @@ namespace JsonSerializer
                     throw new InvalidCastException();
             }
 
-            s += (char)c;
+            result_test.Append(byte_c);
             for (int i = 0; i < result_value.Length - 1; i++)
-                s += (char)ReadNext(target);
+                result_test.Append((char)ReadNext(bytes, ref position, true));
 
-            if (s.ToString() == result_value)
+            if (result_test.ToString().ToLower() == result_value)
                 return result;
 
             throw new InvalidCastException();
         }
 
-        private static object ReadNull(Stream target)
+        /// <summary>
+        /// Reads a null value
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        private static object ReadNull(byte[] bytes, ref int position)
         {
-            int c = (int)ReadNext(target);
-            string s = "";
-
-            switch ((char)c)
+            char byte_c = (char)ReadNext(bytes, ref position);
+            StringBuilder result_test = new StringBuilder();
+            switch (byte_c.ToString().ToLower())
             {
-                case 'n':
+                case "n":
                     break;
                 default:
                     throw new InvalidCastException();
             }
 
-            s += c;
+            result_test.Append(byte_c);
             for (int i = 0; i < 3; i++)
-                s += (char)ReadNext(target);
+                result_test.Append((char)ReadNext(bytes, ref position, true));
 
-            if (s.ToString() == "null")
+            if (result_test.ToString().ToLower() == "null")
                 return null;
-            
+
             throw new InvalidCastException();
         }
 
@@ -566,33 +620,75 @@ namespace JsonSerializer
 
         #endregion Parsing methods
 
-        ///// <summary>
-        ///// Deserializes a stream into an object graph.
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="source"></param>
-        ///// <returns></returns>
-        //public static T Deserialize<T>(Stream source) where T : class, new()
-        //{
-        //    var properties = GetProperties(typeof(T));
-        //    var obj = new T();
-        //    using (var reader = new StreamReader(source))
-        //    {
-        //        var attributeType = typeof(JsonSerializable);
-        //        foreach (var propertyInfo in properties)
-        //        {
-        //            var attr = (JsonSerializable)propertyInfo.GetCustomAttributes(attributeType, false).First();
-        //            var buffer = new char[attr.Length];
-        //            reader.Read(buffer, 0, buffer.Length);
-        //            var value = new string(buffer).Trim();
+        /// <summary>
+        /// Deserializes a stream into an object graph.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static T Deserialize<T>(Stream source) where T : new()
+        {
+            object jsonObj;
 
-        //            if (propertyInfo.PropertyType != typeof(string))
-        //                propertyInfo.SetValue(obj, Convert.ChangeType(value, propertyInfo.PropertyType), null);
-        //            else
-        //                propertyInfo.SetValue(obj, value.Trim(), null);
-        //        }
-        //    }
-        //    return obj;
-        //}
+            // parse JSON stream
+            using (var reader = new StreamReader(source))
+            {
+                char[] buffer = new char[reader.BaseStream.Length];
+                int position = 0;
+
+                reader.ReadBlock(
+                        buffer,
+                        0,
+                        buffer.Length);
+
+                jsonObj = Serializer.ReadValue(
+                    Encoding.UTF8.GetBytes(buffer),
+                    ref position);
+            }
+
+            object obj = null;
+
+            obj = DeserializeValue<T>(jsonObj);
+            
+            return (T)obj;
+        }
+
+        public static T DeserializeValue<T>(object obj) where T : new()
+        {
+            object newObj;
+            if (obj is Hashtable)
+            {
+                var properties = GetProperties(typeof(T));
+                newObj = new T();
+
+                var attributeType = typeof(JsonSerializable);
+                foreach (var propertyInfo in properties)
+                {
+                    // get the value
+                    var value = ((Hashtable)obj)[propertyInfo.Name];
+
+                    if (value is Hashtable)
+                        propertyInfo.SetValue(
+                            newObj,
+                            typeof(Serializer)
+                                .GetMethod("DeserializeValue")
+                                .MakeGenericMethod(propertyInfo.PropertyType)
+                                .Invoke(
+                                    newObj,
+                                    new object[] { value }));
+                    else
+                        propertyInfo.SetValue(
+                            newObj,
+                            Convert.ChangeType(
+                                value,
+                                propertyInfo.PropertyType),
+                            null);
+                }
+
+                return (T)newObj;
+            }
+
+            return default(T);
+        }
     }
 }
