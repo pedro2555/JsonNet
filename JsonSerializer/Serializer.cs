@@ -254,7 +254,7 @@ namespace JsonSerializer
         /// </summary>
         /// <param name="target"></param>
         /// <param name="obj"></param>
-        public static void Serialize(Stream target, object obj)
+        public void Serialize(Stream target, object obj)
         {
             ComposeValue(target, obj);
 
@@ -709,7 +709,7 @@ namespace JsonSerializer
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static T Deserialize<T>(Stream source)
+        public T Deserialize<T>(Stream source)
         {
             object jsonObj;
 

@@ -1,5 +1,6 @@
 ﻿using JsonSerializer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections;
 using System.IO;
 using System.Text;
 
@@ -179,7 +180,8 @@ namespace JsonSerializerTests
 
             using (var stream = new MemoryStream(new byte[16 * 1024], true))
             {
-                Serializer.Serialize(stream, Glossary);
+                Serializer serializer = new Serializer();
+                serializer.Serialize(stream, Glossary);
 
                 stream.Position = 0;
                 var sr = new StreamReader(stream);
@@ -219,10 +221,11 @@ namespace JsonSerializerTests
             _Glossary actual;
             string expected_str = "{\"title\":\"example glossary\",\"GlossDiv\":{\"title\":\"S\",\"GlossList\":{\"GlossEntry\":[{\"ID\":\"SGML\",\"SortAs\":\"SGML\",\"GlossTerm\":\"Standard Generalized Markup Language\",\"Acronym\":\"SGML\",\"Abbrev\":\"ISO 8879:1986\",\"GlossDef\":{\"para\":\"A meta-markup language, used to create markup languages such as DocBook.\",\"GlossSeeAlso\":[\"GML\",\"XML\"]},\"GlossSee\":\"markup\"}]}}}";
 
+            Serializer serializer = new Serializer();
             using (
                 var stream = new MemoryStream(Encoding.UTF8.GetBytes(expected_str)))
             {
-                actual = (_Glossary)Serializer.Deserialize<_Glossary>(stream);
+                actual = (_Glossary)serializer.Deserialize<_Glossary>(stream);
             }
 
             Assert.AreEqual(expected, actual);
