@@ -34,6 +34,7 @@ namespace JsonSerializer
                             typeof(JsonSerializable),
                             true)
                 })
+                .OrderBy(x => x.Attribute != null ? x.Attribute.Order : -1)
                 .Select(x => x.Property);
         }
 
@@ -505,28 +506,28 @@ namespace JsonSerializer
         /// <param name="bytes"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        private static Hashtable ReadArray(byte[] bytes, ref int position)
+        private static object[] ReadArray(byte[] bytes, ref int position)
         {
             char byte_c;
-            Hashtable result = new Hashtable();
+            List<object> r = new List<object>();
 
             do
             {
                 byte_c = (char)ReadNext(bytes, ref position);
 
                 if (byte_c == ']')
-                    return result;
+                    return r.ToArray();
                 else
                     position--;
 
-                result.Add(result.Count, ReadValue(bytes, ref position));
+                r.Add(ReadValue(bytes, ref position));
 
             } while ((byte_c = (char)ReadNext(bytes, ref position)) == ',');
 
             if (byte_c != ']')
                 throw new InvalidCastException();
 
-            return result;
+            return r.ToArray();
         }
 
         /// <summary>
@@ -625,12 +626,90 @@ namespace JsonSerializer
         #endregion Parsing methods
 
         /// <summary>
+        /// Populates a new instance of a provided T class from an Hashtable
+        /// stucture where each Key corresponds to a T property
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static T PopulateNewInstance<T>(object obj)
+        {
+            // our return value
+            object r = null;
+
+            if (obj is Array)
+            {
+                Array _obj = (Array)obj;
+                // arrays
+                r = Array.CreateInstance(
+                    typeof(T).GetElementType(),
+                    _obj.Length);
+                int i = 0;
+                foreach (object o in _obj)
+                    ((Array)r).SetValue(
+                        typeof(Serializer)
+                            .GetMethod("PopulateNewInstance")
+                            .MakeGenericMethod(typeof(T).GetElementType())
+                            .Invoke(
+                                _obj,
+                                new object[] { o }),
+                        i++);
+            }
+            else if(obj is Hashtable)
+            {
+                Hashtable _obj = (Hashtable)obj;
+                r = Activator.CreateInstance(typeof(T));
+
+                // iteract over every T property
+                foreach (PropertyInfo pInfo in GetProperties(typeof(T)))
+                {
+                    // try get the corresponding value from the hashtable
+                    if (!_obj.ContainsKey(pInfo.Name))
+                        // property has no match on hashtable
+                        throw new Exception();
+
+                    if (_obj[pInfo.Name] is Hashtable || _obj[pInfo.Name] is Array)
+                        // recursive recall
+                        pInfo.SetValue(
+                            r,
+                            typeof(Serializer)
+                                .GetMethod("PopulateNewInstance")
+                                .MakeGenericMethod(pInfo.PropertyType)
+                                .Invoke(
+                                    r,
+                                    new object[] { _obj[pInfo.Name] }));
+                    else
+                        // just set the value
+                        pInfo.SetValue(
+                            r,
+                            Convert.ChangeType(
+                                _obj[pInfo.Name],
+                                _obj[pInfo.Name].GetType()));
+                }
+            }
+            else
+                try
+                {
+                    return (T)obj;
+                }
+                catch (Exception crap)
+                {
+                    throw crap;
+                }
+
+            return (T)r;
+        }
+
+
+
+
+        /// <summary>
         /// Deserializes a stream into an object graph.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static T Deserialize<T>(Stream source) where T : new()
+        public static T Deserialize<T>(Stream source)
         {
             object jsonObj;
 
@@ -652,47 +731,9 @@ namespace JsonSerializer
 
             object obj = null;
 
-            obj = DeserializeValue<T>(jsonObj);
+            obj = PopulateNewInstance<T>(jsonObj);
             
             return (T)obj;
-        }
-
-        public static T DeserializeValue<T>(object obj) where T : new()
-        {
-            object newObj;
-            if (obj is Hashtable)
-            {
-                var properties = GetProperties(typeof(T));
-                newObj = new T();
-
-                var attributeType = typeof(JsonSerializable);
-                foreach (var propertyInfo in properties)
-                {
-                    // get the value
-                    var value = ((Hashtable)obj)[propertyInfo.Name];
-
-                    if (value is Hashtable)
-                        propertyInfo.SetValue(
-                            newObj,
-                            typeof(Serializer)
-                                .GetMethod("DeserializeValue")
-                                .MakeGenericMethod(propertyInfo.PropertyType)
-                                .Invoke(
-                                    newObj,
-                                    new object[] { value }));
-                    else
-                        propertyInfo.SetValue(
-                            newObj,
-                            Convert.ChangeType(
-                                value,
-                                propertyInfo.PropertyType),
-                            null);
-                }
-
-                return (T)newObj;
-            }
-
-            return default(T);
         }
     }
 }

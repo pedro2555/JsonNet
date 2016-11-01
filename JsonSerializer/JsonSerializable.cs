@@ -15,6 +15,11 @@ namespace JsonSerializer
         AllowMultiple = true)]
     public class JsonSerializable : Attribute
     {
-        public JsonSerializable() { }
+        public int Order;
+
+        public JsonSerializable(int order = -1)
+        {
+            Order = order;
+        }
     }
 }
