@@ -278,14 +278,16 @@ namespace JsonSerializer
         {
             ComposeValue(target, obj);
 
-            // clean stream lenght
-            long targetLenght = 0;
-            target.Position = 0;
+            // using preallocated mmemory streams might require over allocation
+            // prevention logic, as this snippet tries to be
+            //// clean stream lenght
+            //long targetLenght = 0;
+            //target.Position = 0;
 
-            while (target.ReadByte() != (int)'\0')
-                targetLenght++;
+            // while (target.CanRead && target.ReadByte() != (int)'\0')
+            //    targetLenght++;
 
-            target.SetLength(targetLenght);
+            //target.SetLength(targetLenght);
         }
 
         #region Parsing methods

@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using JsonSerializer;
+using System;
 using System.Collections;
-using JsonSerializer;
+using System.IO;
 using System.Runtime.Serialization;
 
 public class App
@@ -24,7 +24,7 @@ public class App
         // To serialize the hashtable and its key/value pairs,  
         // you must first open a stream for writing. 
         // In this case, use a file stream.
-        FileStream fs = new FileStream("DataFile.dat", FileMode.Create);
+        FileStream fs = new FileStream("DataFile.json", FileMode.Create);
 
         // Construct a BinaryFormatter and use it to serialize the data to the stream.
         Serializer serializer = new Serializer();
@@ -50,14 +50,14 @@ public class App
         Hashtable addresses = null;
 
         // Open the file containing the data that you want to deserialize.
-        FileStream fs = new FileStream("DataFile.dat", FileMode.Open);
+        FileStream fs = new FileStream("DataFile.json", FileMode.Open);
         try
         {
             Serializer serializer = new Serializer();
 
             // Deserialize the hashtable from the file and 
             // assign the reference to the local variable.
-            addresses = (Hashtable)serializer.Deserialize<Hashtable>(fs);
+            addresses = (Hashtable)serializer.Deserialize(fs);
         }
         catch (SerializationException e)
         {
@@ -75,5 +75,7 @@ public class App
         {
             Console.WriteLine("{0} lives at {1}.", de.Key, de.Value);
         }
+
+        Console.Read();
     }
 }
