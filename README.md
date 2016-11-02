@@ -1,33 +1,96 @@
 # JsonNet
-.NET Json Library provides a super simple JSON reading and writing implementation in C# (to use in any .NET enviromen).
 
-Currently only supports reading a JSON stream into a .NET manageable objects neatly organized in Hashtable structures.
+The main goal is to provided a functionality set very similiar to the BinaryFormatter class in .NET.
+Allowing you to directly serialize and deserialize a .NET object into and from a JSON formatted stream.
 
-## How to use
+A quick settings file, user preferences, anything can be dealt with as powerfull .NET objects, and have it effortlessly pressisted to disc, cloud, api, in JSON format with very little boilerplate code.
 
-### Parse JSON
+## Quick use guide
 
-JSON parsing is available with `Parser.ReadValue()`.
+### MSDN Example
 
-`ReadValue()` accepts:
-  * an array of UTF-8 byte enconded JSON string characters (`byte[]`);
-  * and an integer indicating where the JSON string starts in the array.
-  
-  A use example using a source string:
-    
+The follwing C# Console Application is an adaptation, with miminal tweaks required, of the MSDN example for the BinaryFormatter class.
+
 ```
-using JsonNet;
+using JsonSerializer;
+using System;
+using System.Collections;
+using System.IO;
+using System.Runtime.Serialization;
 
-...
+public class App
+{
+    [STAThread]
+    static void Main()
+    {
+        Serialize();
+        Deserialize();
+    }
 
-string JSON_string = "[ \"strings\", -12.35654,345 ,\r\n \t-234,12.3,{\"string\":\"value\",\"number\":-12.35654},[],true,false,null,]";
-int position = 0;
+    static void Serialize()
+    {
+        // Create a hashtable of values that will eventually be serialized.
+        Hashtable addresses = new Hashtable();
+        addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
+        addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
+        addresses.Add("Mary", "PO Box 112233, Palo Alto, CA 94301");
 
-object result = Parser.ReadValue(
-  new UTF8Encoding().GetBytes(JSON_string),
-  ref position);
+        // To serialize the hashtable and its key/value pairs,  
+        // you must first open a stream for writing. 
+        // In this case, use a file stream.
+        FileStream fs = new FileStream("DataFile.json", FileMode.Create);
+
+        // Construct a Serializer and use it to serialize the data to the stream.
+        Serializer serializer = new Serializer();
+        try
+        {
+            serializer.Serialize(fs, addresses);
+        }
+        catch (SerializationException e)
+        {
+            Console.WriteLine("Failed to serialize. Reason: " + e.Message);
+            throw;
+        }
+        finally
+        {
+            fs.Close();
+        }
+    }
+
+
+    static void Deserialize()
+    {
+        // Declare the hashtable reference.
+        Hashtable addresses = null;
+
+        // Open the file containing the data that you want to deserialize.
+        FileStream fs = new FileStream("DataFile.json", FileMode.Open);
+        try
+        {
+            Serializer serializer = new Serializer();
+
+            // Deserialize the hashtable from the file and 
+            // assign the reference to the local variable.
+            addresses = (Hashtable)serializer.Deserialize(fs);
+        }
+        catch (SerializationException e)
+        {
+            Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
+            throw;
+        }
+        finally
+        {
+            fs.Close();
+        }
+
+        // To prove that the table deserialized correctly, 
+        // display the key/value pairs.
+        foreach (DictionaryEntry de in addresses)
+        {
+            Console.WriteLine("{0} lives at {1}.", de.Key, de.Value);
+        }
+
+        Console.Read();
+    }
+}
 ```
-
-### Compose JSON
-
-TODO
