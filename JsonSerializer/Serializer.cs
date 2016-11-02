@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -208,23 +209,42 @@ namespace JsonSerializer
 
             WriteToStream(target, '{');
 
-            // Get serialzable properties
-            var properties = GetProperties(obj.GetType());
-
-            var attributeType = typeof(JsonSerializable);
-            foreach (var propertyInfo in properties)
+            if (obj is Hashtable)
             {
-                if (!firstEntryFlag)
-                    WriteToStream(target, ',');
+                foreach (DictionaryEntry e in (Hashtable)obj)
+                {
+                    if (!firstEntryFlag)
+                        WriteToStream(target, ',');
 
-                WriteToStream(
-                    target,
-                    String.Format("\"{0}\":", propertyInfo.Name));
-                ComposeValue(
-                    target,
-                    propertyInfo.GetValue(obj, null));
+                    WriteToStream(
+                        target,
+                        String.Format("\"{0}\":", e.Key));
+                    ComposeValue(
+                        target,
+                        e.Value);
 
-                firstEntryFlag = false;
+                    firstEntryFlag = false;
+                }
+            }
+            else
+            {
+                // Get serialzable properties
+                var properties = GetProperties(obj.GetType());
+
+                foreach (var propertyInfo in properties)
+                {
+                    if (!firstEntryFlag)
+                        WriteToStream(target, ',');
+
+                    WriteToStream(
+                        target,
+                        String.Format("\"{0}\":", propertyInfo.Name));
+                    ComposeValue(
+                        target,
+                        propertyInfo.GetValue(obj));
+
+                    firstEntryFlag = false;
+                }
             }
 
             WriteToStream(target, '}');
@@ -625,44 +645,52 @@ namespace JsonSerializer
 
         #endregion Parsing methods
 
-        /// <summary>
-        /// Populates a new instance of a provided T class from an Hashtable
-        /// stucture where each Key corresponds to a T property
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public static T PopulateNewInstance<T>(object obj)
+        public T Deserialize<T>(object source)
         {
             // our return value
             object r = null;
 
-            if (obj is Array)
+            if (source is Array)
             {
-                Array _obj = (Array)obj;
+                Array _obj = (Array)source;
                 // arrays
                 r = Array.CreateInstance(
                     typeof(T).GetElementType(),
                     _obj.Length);
                 int i = 0;
                 foreach (object o in _obj)
+                {
                     ((Array)r).SetValue(
                         typeof(Serializer)
-                            .GetMethod("PopulateNewInstance")
+                            .GetMethods()
+                            .First(
+                                m =>
+                                m.Name == "Deserialize"
+                                && m.ReturnType.Name == "T"
+                                && m.IsGenericMethod)
                             .MakeGenericMethod(typeof(T).GetElementType())
                             .Invoke(
-                                _obj,
+                                this,
                                 new object[] { o }),
                         i++);
+                }
             }
-            else if(obj is Hashtable)
+            else if (source is Hashtable)
             {
-                Hashtable _obj = (Hashtable)obj;
+                Hashtable _obj = (Hashtable)source;
                 r = Activator.CreateInstance(typeof(T));
 
                 // iteract over every T property
                 foreach (PropertyInfo pInfo in GetProperties(typeof(T)))
                 {
+                    MethodInfo method = typeof(Serializer)
+                                .GetMethods()
+                                .First(
+                                    m =>
+                                    m.Name == "Deserialize"
+                                    && m.ReturnType.Name == "T"
+                                    && m.IsGenericMethod);
+
                     // try get the corresponding value from the hashtable
                     if (!_obj.ContainsKey(pInfo.Name))
                         // property has no match on hashtable
@@ -673,10 +701,15 @@ namespace JsonSerializer
                         pInfo.SetValue(
                             r,
                             typeof(Serializer)
-                                .GetMethod("PopulateNewInstance")
+                                .GetMethods()
+                                .First(
+                                    m =>
+                                    m.Name == "Deserialize"
+                                    && m.ReturnType.Name == "T"
+                                    && m.IsGenericMethod)
                                 .MakeGenericMethod(pInfo.PropertyType)
                                 .Invoke(
-                                    r,
+                                    this,
                                     new object[] { _obj[pInfo.Name] }));
                     else
                         // just set the value
@@ -690,7 +723,7 @@ namespace JsonSerializer
             else
                 try
                 {
-                    return (T)obj;
+                    return (T)source;
                 }
                 catch (Exception crap)
                 {
@@ -700,16 +733,27 @@ namespace JsonSerializer
             return (T)r;
         }
 
-
-
-
         /// <summary>
         /// Deserializes a stream into an object graph.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="source"></param>
+        /// <typeparam name="T">The type to which to cast.</typeparam>
+        /// <param name="source">The stream from which to deserialize the object
+        ///  graph.</param>
+        /// <param name="obj"></param>
         /// <returns></returns>
         public T Deserialize<T>(Stream source)
+        {
+            return Deserialize<T>(Deserialize(source));
+        }
+
+        /// <summary>
+        /// Deserializes a stream into an object graph that is direct
+        /// correspondence of JSON data types into .NET types.
+        /// </summary>
+        /// <param name="source">The stream from which to deserialize the object
+        /// graph.</param>
+        /// <returns></returns>
+        public object Deserialize(Stream source)
         {
             object jsonObj;
 
@@ -729,11 +773,7 @@ namespace JsonSerializer
                     ref position);
             }
 
-            object obj = null;
-
-            obj = PopulateNewInstance<T>(jsonObj);
-            
-            return (T)obj;
+            return jsonObj;
         }
     }
 }
