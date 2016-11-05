@@ -158,9 +158,9 @@ namespace JsonSerializer
         /// <param name="obj"></param>
         private static void ComposeValue(Stream target, object obj)
         {
-            if (obj is string)
+            if (obj is string || obj is Enum)
             {
-                ComposeString(target, obj);
+                ComposeString(target, obj.ToString());
                 return;
             }
 
@@ -713,6 +713,15 @@ namespace JsonSerializer
                                 .Invoke(
                                     this,
                                     new object[] { _obj[pInfo.Name] }));
+                    else if (pInfo.PropertyType.BaseType == typeof(Enum))
+                    {
+                        // parse the Enum
+                        pInfo.SetValue(
+                            r,
+                            Enum.Parse(
+                                pInfo.PropertyType,
+                                _obj[pInfo.Name].ToString()));
+                    }
                     else
                         // just set the value
                         pInfo.SetValue(
@@ -722,10 +731,17 @@ namespace JsonSerializer
                                 _obj[pInfo.Name].GetType()));
                 }
             }
+            else if (source is Enum)
+            {
+                return (T)Enum.Parse(typeof(T), source.ToString());
+            }
             else
                 try
                 {
-                    return (T)source;
+                    if (typeof(T).BaseType == typeof(Enum))
+                        return (T)Enum.Parse(typeof(T), (string)source);
+                    else
+                        return (T)source;
                 }
                 catch (Exception crap)
                 {
