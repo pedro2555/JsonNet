@@ -26,17 +26,7 @@ namespace JsonSerializer
         {
             return type
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Select(x => new
-                {
-                    Property = x,
-                    Attribute =
-                        (JsonSerializable)Attribute.GetCustomAttribute(
-                            x,
-                            typeof(JsonSerializable),
-                            true)
-                })
-                .OrderBy(x => x.Attribute != null ? x.Attribute.Order : -1)
-                .Select(x => x.Property);
+                .Where(p => p.IsDefined(typeof(JsonSerializable)));
         }
 
         #region Composing methods
@@ -158,7 +148,7 @@ namespace JsonSerializer
         /// <param name="obj"></param>
         private static void ComposeValue(Stream target, object obj)
         {
-            if (obj is string || obj is Enum)
+            if (obj is string || obj is Enum || obj is Guid)
             {
                 ComposeString(target, obj.ToString());
                 return;
